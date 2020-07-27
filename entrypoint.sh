@@ -10,7 +10,6 @@ IMAGE=$6
 ALLOW=$7
 PROJECT_ID=$8
 
-
 # Generate random filename
 FILENAME=$(mktemp)
 
@@ -38,7 +37,19 @@ else
     exit 1;
 fi
 
+if [ "$INPUT_ENV" ]
+then
+    ENVS=$(cat "$INPUT_ENV" | xargs | sed 's/ /,/g')
+fi
 
+if [ "$ENVS" ]
+then
+    ENV_FLAG="--set-env-vars $ENVS"
+else
+    ENV_FLAG="--clear-env-vars"
+fi
+
+echo $ENV_FLAG
 
 if [ "$ACTION_TYPE" = "run" ] || [ "$ACTION_TYPE" = "update" ] || [ "$ACTION_TYPE" = "delete" ]; then
     echo "Choose $ACTION_TYPE as action type"
@@ -55,24 +66,27 @@ if [ "$ACTION_TYPE" = "run" ]; then
         --allow-unauthenticated \
         --region "$REGION" \
         --port "$PORT" \
-        --image "$IMAGE"
+        --image "$IMAGE" \
+        $ENV_FLAG
     else 
         gcloud run deploy "$NAME" \
         --platform managed \
         --region "$REGION" \
         --port "$PORT" \
-        --image "$IMAGE"
+        --image "$IMAGE" \
+        $ENV_FLAG
     fi
 elif [ "$ACTION_TYPE" = "update" ]; then
     gcloud run deploy "$NAME" \
     --platform managed \
     --region "$REGION" \
-    --image "$IMAGE"
+    --image "$IMAGE" \
+    $ENV_FLAG
 elif [ "$ACTION_TYPE" = "delete" ]; then
     gcloud run services delete "$NAME" \
     --platform managed \
     --region "$REGION" \
-    --quiet 
+    --quiet
 fi
 
 
